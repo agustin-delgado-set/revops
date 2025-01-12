@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "revops-447610",
+  "private_key_id": "79dac1d76caecce14779c8e92f9561b683700538",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDlowUIsVZqK8Fu\n0yRyvDVHn0FJBq05hOzaBr5b9K147FEgNc8n16Lt4ETqxtFIFP16OB6rfurWIemW\nmwDkqoE01tBLTKwrVf+NR2y+MZD155yifacVBWO5i5ADLTkuSXQ1d16QzCmIgRPb\nKWTVtm9//Kcs3uoRIaVIEuZ/ofMONyGePr1Dwdq5We2Va/fMuNU7qhIJJtpunJ63\nfxQLPrUZbaw5Kn1HtBKAcEJIx1NN/rTuz5+zTHmvTAHzWxf1S7yHhXx7fS2MOfAs\nO8AYNEWf7l2MeVzDxPMc7G4C+k1X261+yfQ2s1qSUqfh5LnL39skyV+we+h8W6gG\nBaM9Ro1BAgMBAAECggEAApdCrtzXWYEkYHnOiw0vZF86MewlcgUbVKtnpEB1YOxO\nTwN5vUdBeJcY7UrbIMnR1qTsSFQ5Kzt8jUfdlvbggyYwTpqEb8RmNXkak5EaGQLT\nttadlw8K7L8+cPa76CyJJzLxVMdk6ZFxQKit0VEgCWziPaSci0nFTwlIOKTtCdo/\nv1kLkfK/fBMXynQUkUawkL2M+Smc9bOxP234p/AgbBeNurUQol4V1S8U63RFmiRa\n+JI+xgZAQ9NRGiAo2N7TaqAOZR1u1Oqus56cjhgqi4TMfUwBrxY6utpUZLo2cXeX\n6JKZHCCKtmVkLRnqqxQp3bATe93l8oGM02e63kVoUQKBgQD12eo5B5cm/5ROmuTg\nXFLb23BmwIiY/qfpzfdcWGishDiFtSyQZ8B9f5VoZs2YUgltISLprQuiBe/J8QYs\nTesu5nwj98YH+3cIAglXPthnFONwle5utDH+PFIxALckpj28wz8+TMyoIZOcfR+F\nJUDMmjaH7yL4i9L+Hpsbjcdo2QKBgQDvHcFYH40jU8icR4T6aAdlVXPJ6G0M2OTi\ndJr9WUxflMh/5Nwx6UCTQ/5GF7BBO0Xwb/n4uPOQdVACxN+0vShslQPMnJZcaBrG\n0sE42vSl1+2yN4vyRQmDbu9++P47LuC3k+0ljIrrAtCPrkCCsimXo0MCPpqjkuHu\nU5cY+09GqQKBgQDeZtGh4aH1H4N0UF74L8ytIyfdbBKmBMi1kyNQIJIgbkQLgMfd\nol3Zqc7o8QbP4nawiCdjKK27Vo+DKUyiS6KTfOGUUBKPKgaV8fGtQSbWqWjOcnON\nJemLydm4hqMmvlRfLGlL3IHPHwC/sdkPw5GJBYCLG+OQ4DxwshMyq+FWkQKBgGGx\nroTqnyeH27a+Ib6NMjhcqWoc5DETjLBZI9nO2j1S9HgMcUqTGicQ6JqKoyCDrxeF\nKIROTHUA+SeoeB3ICvQSDfNTJruqbQY+pWMtUjdP+XWO7EaXnkNs17zwzi4wAPAA\nKCvnN/q8s6mAcCr1z7h8o6wPF+8s29IbpOg4BTPBAoGASHB4ydodLXjbLUwJ9mDo\ngW4YcKHlA2hMLZG+nJ1x130fJ/wFdowxuPfqQ0PZvmD42Bcy60Rv3IHnoDR23yRJ\nByR5frxQTWmVV6GT071qcgADxefXXrNFX1/8xLkJoPZ3So/ygLV8K2CXTdvtnltg\nGdvo1509npcNY26LUqAC7nY=\n-----END PRIVATE KEY-----\n",
+  "client_email": "revops@revops-447610.iam.gserviceaccount.com",
+  "client_id": "113544917491064036453",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/revops%40revops-447610.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

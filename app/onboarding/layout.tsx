@@ -1,5 +1,6 @@
 import React from 'react'
 import Header from './components/header'
+import { UsersProvider } from './context'
 
 interface LayoutProps {
   children?: React.ReactNode
@@ -7,10 +8,12 @@ interface LayoutProps {
 
 export default function OnboardingLayout({ children }: LayoutProps) {
   return (
-    <div className="bg-accent h-full flex flex-col">
+    <div className="bg-[#fafbfd] h-full flex flex-col">
       <Header />
       <div className='p-4 h-full'>
-        {children}
+        <UsersProvider>
+          {children}
+        </UsersProvider>
       </div>
     </div>
   )

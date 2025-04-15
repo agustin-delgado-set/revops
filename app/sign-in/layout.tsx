@@ -6,7 +6,7 @@ interface LayoutProps {
 
 export default function SignInLayout({ children }: LayoutProps) {
   return (
-    <div className="flex min-h-svh flex-col items-center justify-center bg-accent p-6 md:p-10">
+    <div className="flex min-h-svh flex-col items-center justify-center bg-[#002B89] p-6 md:p-10 overflow-hidden">
       {children}
     </div>
   )

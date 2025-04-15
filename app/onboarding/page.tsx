@@ -1,26 +1,13 @@
-import { createClient } from "@/lib/supabase/server";
-import { columns, Users } from "./components/columns";
+'use client'
+
+import { columns } from "./components/columns";
 import { DataTable } from "./components/data-table";
 import NewAccessDialog from "./components/new-access-dialog";
 
-async function getData(): Promise<Users[]> {
-  const supabase = await createClient()
-  const { data, error } = await supabase
-    .from("users")
-    .select("*")
-
-  if (error) {
-    throw error
-  }
-
-  return data
-}
-
-export default async function OnboardingPage() {
-  const data = await getData()
+export default function OnboardingPage() {
   return (
     <>
-      <DataTable columns={columns} data={data} />
+      <DataTable columns={columns} />
       <NewAccessDialog />
     </>
   )

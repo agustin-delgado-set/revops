@@ -439,7 +439,7 @@ export default function OnboardingForm() {
             )}
           />
           <Button
-            className="!mt-8 ml-auto min-w-[97px]"
+            className="!mt-8 ml-auto min-w-[97px] bg-[#002B89]"
             type="submit"
             disabled={loading}
           >

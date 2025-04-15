@@ -188,7 +188,7 @@ export default function OnboardingForm() {
 
           <div className="mb-2">
             <h1 className="text-[25px] font-light">Welcome to RevOps!</h1>
-            <span className="text-[14px] font-light">Let's get started by setting up your profile.</span>
+            <span className="text-[14px] font-light">Let&apos;s get started by setting up your profile.</span>
           </div>
           <div className="grid grid-cols-12 gap-4">
             <div className="col-span-6">

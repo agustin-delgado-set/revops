@@ -236,7 +236,7 @@ export function DataTable({
             <Button
               className="ml-auto"
               variant="outline"
-              disabled={loading}
+              disabled={loading || !statusCounts.get("pending")}
               onClick={() => {
                 const selectedRows = table.getRowModel().rows.filter(row => row.original.status === 'pending').map((row) => row.original);
                 sendOnboardingEmail(selectedRows)
@@ -253,7 +253,7 @@ export function DataTable({
               }
               Onboard pending
               <span className="-me-1 ms-3 inline-flex h-5 max-h-full items-center rounded border border-border bg-background px-1 font-[inherit] text-[0.625rem] font-medium text-muted-foreground/70">
-                {statusCounts.get("pending")}
+                {statusCounts.get("pending") ?? 0}
               </span>
             </Button>
           )}

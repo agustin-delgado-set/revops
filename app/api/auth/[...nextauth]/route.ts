@@ -89,7 +89,7 @@ const authOptions: NextAuthOptions = {
   callbacks: {
     async signIn({ user }) {
       const email = user.email || "";
-      if (email.endsWith("@setandforget.io")) {
+      if (email.endsWith("@revopsautomated.com")) {
         return true;
       }
       return false;

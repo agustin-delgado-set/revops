@@ -19,8 +19,8 @@ async function createGmailUser({ access_token, user_id, first_name, last_name, e
       requestBody: {
         primaryEmail: email,
         name: {
-          givenName: 'test',
-          familyName: 'test2',
+          givenName: first_name,
+          familyName: last_name,
         },
         password: "wvfPzp#X3109",
       },

@@ -85,7 +85,7 @@ export default function OnboardingForm() {
 
     setLoading(true);
     try {
-      const formattedEmail = values.first_name.toLowerCase() + values.last_name.toLowerCase() + "@setandforget.io";
+      const formattedEmail = values.first_name.toLowerCase() + values.last_name.toLowerCase() + "@revopsautomated.com";
 
       const { error } = await supabase.from("users").insert([{ ...values, email: formattedEmail, personal_email: values.email, access: [] }]);
 

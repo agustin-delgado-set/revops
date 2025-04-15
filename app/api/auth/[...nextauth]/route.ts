@@ -16,7 +16,7 @@ declare module "next-auth" {
 
 interface Token {
   accessToken: string;
-  accessTokenExpires: number; // Timestamp en milisegundos
+  accessTokenExpires: number;
   refreshToken: string;
   user?: {
     name?: string;
@@ -26,9 +26,6 @@ interface Token {
   error?: string;
 }
 
-/**
- * Función auxiliar para refrescar el token con Google
- */
 async function refreshAccessToken(token: Token): Promise<Token> {
   try {
     const url =
@@ -51,12 +48,11 @@ async function refreshAccessToken(token: Token): Promise<Token> {
       throw refreshedTokens;
     }
 
-    // Devuelve el nuevo token con los datos actualizados
     return {
       ...token,
       accessToken: refreshedTokens.access_token,
-      accessTokenExpires: Date.now() + refreshedTokens.expires_in * 1000, // 1 hora aprox
-      refreshToken: refreshedTokens.refresh_token ?? token.refreshToken, // Reemplaza sólo si el refresh token vino en la respuesta
+      accessTokenExpires: Date.now() + refreshedTokens.expires_in * 1000,
+      refreshToken: refreshedTokens.refresh_token ?? token.refreshToken,
     };
   } catch (error) {
     console.error("Error al refrescar el token: ", error);
@@ -91,10 +87,6 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
 
   callbacks: {
-    /**
-     * Controla si el usuario puede loguearse.
-     * Ejemplo: sólo permitir usuarios de un dominio específico.
-     */
     async signIn({ user }) {
       const email = user.email || "";
       if (email.endsWith("@setandforget.io")) {
@@ -102,14 +94,7 @@ export const authOptions: NextAuthOptions = {
       }
       return false;
     },
-
-    /**
-     * jwt callback:
-     * - Se llama la primera vez cuando el usuario se loguea (recibe `account`, `user`).
-     * - En subsiguientes llamadas, solo recibe el token (podemos chequear expiración).
-     */
     async jwt({ token, account, user }) {
-      // Caso 1: Primer inicio de sesión
       if (account && user) {
         return {
           ...token,
@@ -120,13 +105,10 @@ export const authOptions: NextAuthOptions = {
         };
       }
 
-      // Caso 2: El token ya existe y no ha expirado
       if ((token as unknown as Token).accessTokenExpires && Date.now() < (token as unknown as Token).accessTokenExpires) {
-        // Todavía es válido
         return token;
       }
 
-      // Caso 3: El token expiró, se intenta refrescar
       const refreshedToken = await refreshAccessToken(token as unknown as Token);
       return {
         ...token,
@@ -134,10 +116,6 @@ export const authOptions: NextAuthOptions = {
       };
     },
 
-    /**
-     * session callback:
-     * - Cada vez que llamemos a useSession() o getSession(), pasa por aquí.
-     */
     async session({ session, token }) {
       const t = token as unknown as Token;
       session.user = t.user;

@@ -27,9 +27,13 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
+    "country-data": "^0.0.31",
+    "currency-codes": "^2.2.0",
+    "currency-flags": "^4.0.7",
     "date-fns": "^4.1.0",
     "googleapis": "^144.0.0",
     "lucide-react": "^0.469.0",
+    "moment-timezone": "^0.5.48",
     "net": "^1.0.2",
     "next": "14.2.16",
     "next-auth": "^4.24.11",
@@ -46,6 +50,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@types/country-data": "^0.0.5",
     "@types/node": "^20",
     "@types/nodemailer": "^6.4.17",
     "@types/react": "^18",

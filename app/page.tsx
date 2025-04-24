@@ -8,9 +8,14 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import moment from "moment-timezone"
 import currencyCodes from "currency-codes"
 import { countries } from "country-data"
-import { createClient } from "@/lib/supabase/client"
-import { toast } from "sonner"
+import ISO6391 from "iso-639-1"
+
 import * as z from "zod"
+
+import { createClient } from "@/lib/supabase/client"
+import { cn } from "@/lib/utils"
+
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -31,9 +36,11 @@ import {
   SelectValue
 } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import { Check, ChevronsUpDown, RotateCw } from "lucide-react"
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
-import { cn } from "@/lib/utils"
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent
+} from "@/components/ui/popover"
 import {
   Command,
   CommandInput,
@@ -42,6 +49,14 @@ import {
   CommandGroup,
   CommandItem
 } from "@/components/ui/command"
+
+import { CalendarIcon, Check, ChevronsUpDown, RotateCw } from "lucide-react"
+import { Calendar } from "@/components/ui/calendar"
+import { format } from "date-fns"
+
+/* ────────────────────────────────────────────────────────────────────────── */
+/* Static data                                                               */
+/* ────────────────────────────────────────────────────────────────────────── */
 
 const timeZoneListRaw = moment.tz.names()
 
@@ -54,14 +69,19 @@ function getFlagEmoji(alpha2: string): string {
 }
 
 const currencyList = currencyCodes.codes().map(code => {
-  const country = countries.all.find((c) =>
-    Array.isArray(c.currencies) && c.currencies.includes(code)
+  const country = countries.all.find(
+    c => Array.isArray(c.currencies) && c.currencies.includes(code)
   )
   return {
     code,
     flag: country ? getFlagEmoji(country.alpha2) : ""
   }
 })
+
+const languagesList = ISO6391.getAllNames().map(name => ({
+  label: name,
+  value: name
+}))
 
 const popularTimeZones = [
   "UTC",
@@ -70,7 +90,21 @@ const popularTimeZones = [
   "America/Denver",
   "America/Los_Angeles"
 ]
+
 const popularCurrencies = ["USD", "EUR", "GBP", "ARS"]
+
+const popularLanguages = [
+  "English",
+  "Spanish",
+  "French",
+  "German",
+  "Mandarin",
+  "Portuguese"
+]
+
+/* ────────────────────────────────────────────────────────────────────────── */
+/* Schema & form setup                                                       */
+/* ────────────────────────────────────────────────────────────────────────── */
 
 const formSchema = z.object({
   first_name: z.string().min(1, { message: "First name is required" }),
@@ -89,13 +123,24 @@ const formSchema = z.object({
   availability: z.string().min(1, { message: "Availability is required" }),
   local_currency: z.string().min(1, { message: "Local currency is required" }),
   has_uk_bank_account: z.boolean(),
-  payment_mechanism: z.string().min(1, { message: "Payment mechanism is required" })
+  payment_mechanism: z.string().min(1, { message: "Payment mechanism is required" }),
+  languages: z.array(z.string()).min(1, {
+    message: "Select at least one language"
+  }),
+  contract_signed_date: z.string().min(1, { message: "Date is required" })
 })
+
+type FormValues = z.infer<typeof formSchema>
+
+/* ────────────────────────────────────────────────────────────────────────── */
+/* Component                                                                 */
+/* ────────────────────────────────────────────────────────────────────────── */
 
 export default function OnboardingForm() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
-  const form = useForm<z.infer<typeof formSchema>>({
+
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       first_name: "",
@@ -109,12 +154,15 @@ export default function OnboardingForm() {
       availability: "",
       local_currency: "",
       has_uk_bank_account: false,
-      payment_mechanism: ""
+      payment_mechanism: "",
+      languages: [],
+      contract_signed_date: ""
     }
   })
 
   const selectedStaffType = form.watch("staff_type")
 
+  /* ────── Time-zone helpers ────── */
   const tzOptions = useMemo(
     () =>
       timeZoneListRaw.map(tz => {
@@ -123,7 +171,9 @@ export default function OnboardingForm() {
         const absMin = Math.abs(offsetMin)
         const hours = Math.floor(absMin / 60)
         const minutes = absMin % 60
-        const offset = `${sign}${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`
+        const offset = `${sign}${String(hours).padStart(2, "0")}:${String(
+          minutes
+        ).padStart(2, "0")}`
         return { label: `(GMT${offset}) ${tz}`, value: tz }
       }),
     []
@@ -141,6 +191,7 @@ export default function OnboardingForm() {
     ? filteredTimeZones
     : tzOptions.filter(opt => popularTimeZones.includes(opt.value))
 
+  /* ────── Currency helpers ────── */
   const [currencyQuery, setCurrencyQuery] = useState("")
   const filteredCurrencies = useMemo(
     () =>
@@ -153,23 +204,36 @@ export default function OnboardingForm() {
     ? filteredCurrencies
     : currencyList.filter(c => popularCurrencies.includes(c.code))
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  /* ────── Language helpers ────── */
+  const [langQuery, setLangQuery] = useState("")
+  const filteredLanguages = useMemo(
+    () =>
+      languagesList.filter(item =>
+        item.label.toLowerCase().includes(langQuery.toLowerCase())
+      ),
+    [langQuery]
+  )
+  const displayedLanguages = langQuery
+    ? filteredLanguages
+    : languagesList.filter(l => popularLanguages.includes(l.value))
+
+  /* ────── Submit ────── */
+  async function onSubmit(values: FormValues) {
     const supabase = createClient()
     setLoading(true)
     try {
       const formattedEmail = `${values.first_name
         .toLowerCase()
         .trim()}${values.last_name.toLowerCase().trim()}@revopsautomated.com`
-      const { error } = await supabase
-        .from("users")
-        .insert([
-          {
-            ...values,
-            email: formattedEmail,
-            personal_email: values.email,
-            access: []
-          }
-        ])
+
+      const { error } = await supabase.from("users").insert([
+        {
+          ...values,
+          email: formattedEmail,
+          personal_email: values.email,
+          access: []
+        }
+      ])
 
       if (error) {
         console.error("Submission error", error)
@@ -187,6 +251,10 @@ export default function OnboardingForm() {
     }
   }
 
+  /* ──────────────────────────────────────────────────────────────────────── */
+  /* Render                                                                   */
+  /* ──────────────────────────────────────────────────────────────────────── */
+
   return (
     <div className="p-8 overflow-hidden">
       <Form {...form}>
@@ -200,6 +268,7 @@ export default function OnboardingForm() {
           </p>
 
           <div className="grid grid-cols-2 gap-4">
+            {/* ────── Personal info ────── */}
             <div>
               <FormField
                 control={form.control}
@@ -287,6 +356,7 @@ export default function OnboardingForm() {
               />
             </div>
 
+            {/* ────── Staff & department ────── */}
             <div>
               <FormField
                 control={form.control}
@@ -303,9 +373,7 @@ export default function OnboardingForm() {
                           <SelectValue placeholder="Select Staff Type" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="full-time">
-                            Full-time
-                          </SelectItem>
+                          <SelectItem value="full-time">Full-time</SelectItem>
                           <SelectItem value="project-based-consultant">
                             Project-based Consultant
                           </SelectItem>
@@ -334,9 +402,7 @@ export default function OnboardingForm() {
                           <SelectValue placeholder="Select Department" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="development">
-                            Development
-                          </SelectItem>
+                          <SelectItem value="development">Development</SelectItem>
                           <SelectItem value="implementation">
                             Implementation
                           </SelectItem>
@@ -351,6 +417,7 @@ export default function OnboardingForm() {
               />
             </div>
 
+            {/* ────── Time zone ────── */}
             <div>
               <FormField
                 control={form.control}
@@ -370,8 +437,9 @@ export default function OnboardingForm() {
                             )}
                           >
                             {field.value
-                              ? tzOptions.find(opt => opt.value === field.value)
-                                ?.label
+                              ? tzOptions.find(
+                                opt => opt.value === field.value
+                              )?.label
                               : "Select Timezone"}
                             <ChevronsUpDown className="opacity-50" />
                           </Button>
@@ -417,13 +485,14 @@ export default function OnboardingForm() {
               />
             </div>
 
+            {/* ────── Availability ────── */}
             <div>
               <FormField
                 control={form.control}
                 name="availability"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Availability per week (Hrs)</FormLabel>
+                    <FormLabel>Availability per week (hrs)</FormLabel>
                     <FormControl>
                       <Input placeholder="e.g. 40" {...field} />
                     </FormControl>
@@ -439,6 +508,7 @@ export default function OnboardingForm() {
               />
             </div>
 
+            {/* ────── Currency ────── */}
             <div>
               <FormField
                 control={form.control}
@@ -460,7 +530,8 @@ export default function OnboardingForm() {
                             {field.value
                               ? `${currencyList.find(
                                 c => c.code === field.value
-                              )?.flag} ${field.value}`
+                              )?.flag
+                              } ${field.value}`
                               : "Select Currency"}
                             <ChevronsUpDown className="opacity-50" />
                           </Button>
@@ -507,6 +578,7 @@ export default function OnboardingForm() {
               />
             </div>
 
+            {/* ────── Payment mechanism ────── */}
             <div>
               <FormField
                 control={form.control}
@@ -526,7 +598,7 @@ export default function OnboardingForm() {
                           <SelectItem value="bank-transfer">
                             Bank Transfer
                           </SelectItem>
-                          <SelectItem value="paypal">Paypal</SelectItem>
+                          <SelectItem value="paypal">PayPal</SelectItem>
                           <SelectItem value="stripe">Stripe</SelectItem>
                           <SelectItem value="other">Other</SelectItem>
                         </SelectContent>
@@ -538,12 +610,13 @@ export default function OnboardingForm() {
               />
             </div>
 
+            {/* ────── UK bank account ────── */}
             <div className="col-span-2">
               <FormField
                 control={form.control}
                 name="has_uk_bank_account"
                 render={({ field }) => (
-                  <FormItem className="flex items-center justify-between border px-3 py-2 shadow-sm">
+                  <FormItem className="flex items-center justify-between border px-3 py-2 shadow-sm space-y-0">
                     <FormLabel>Do you have a UK bank account?</FormLabel>
                     <FormControl>
                       <Switch
@@ -555,8 +628,142 @@ export default function OnboardingForm() {
                 )}
               />
             </div>
+
+            {/* ────── Languages ────── */}
+            <div>
+              <FormField
+                control={form.control}
+                name="languages"
+                render={({ field }) => {
+                  const hasValue =
+                    Array.isArray(field.value) && field.value.length > 0
+                  const displayValue = hasValue
+                    ? field.value.length > 3
+                      ? `${field.value.slice(0, 3).join(", ")} +${field.value.length - 3
+                      }`
+                      : field.value.join(", ")
+                    : "Select Languages"
+
+                  return (
+                    <FormItem>
+                      <FormLabel>Languages Fluent In</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              className={cn(
+                                "w-full justify-between rounded-none font-normal",
+                                !hasValue && "text-muted-foreground"
+                              )}
+                            >
+                              {displayValue}
+                              <ChevronsUpDown className="opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[300px] p-0">
+                          <Command>
+                            <CommandInput
+                              placeholder="Search Languages..."
+                              onValueChange={setLangQuery}
+                              className="h-9"
+                            />
+                            <CommandList>
+                              <CommandEmpty>No languages found.</CommandEmpty>
+                              <CommandGroup>
+                                {displayedLanguages.map(lang => (
+                                  <CommandItem
+                                    key={lang.value}
+                                    value={lang.value}
+                                    onSelect={() => {
+                                      const current =
+                                        form.getValues("languages") || []
+                                      if (current.includes(lang.value)) {
+                                        form.setValue(
+                                          "languages",
+                                          current.filter(
+                                            v => v !== lang.value
+                                          )
+                                        )
+                                      } else {
+                                        form.setValue("languages", [
+                                          ...current,
+                                          lang.value
+                                        ])
+                                      }
+                                    }}
+                                  >
+                                    {lang.label}
+                                    <Check
+                                      className={cn(
+                                        "ml-auto",
+                                        field.value.includes(lang.value)
+                                          ? "opacity-100"
+                                          : "opacity-0"
+                                      )}
+                                    />
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )
+                }}
+              />
+            </div>
+
+            {/* ────── Contract signed date ────── */}
+            <div>
+              <FormField
+                control={form.control}
+                name="contract_signed_date"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel className="mb-2.5">Contract Signed Date</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-between rounded-none font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, "PPP")
+                            ) : (
+                              <span>Pick a date</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value ? new Date(field.value) : undefined}
+                          onSelect={date => {
+                            field.onChange(date ? date.toISOString() : "")
+                          }}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
           </div>
 
+          {/* ────── Submit ────── */}
           <Button
             type="submit"
             disabled={loading}

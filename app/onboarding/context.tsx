@@ -8,6 +8,7 @@ type UsersContextType = {
   users: Users[];
   loading: boolean;
   setUsers: React.Dispatch<React.SetStateAction<Users[]>>;
+  refetchData: () => Promise<void>;
 };
 
 const UsersContext = createContext<undefined | UsersContextType>(undefined);
@@ -38,6 +39,22 @@ export const UsersProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return data
   }
 
+  async function refetchData() {
+    setLoading(true)
+    const supabase = createClient()
+    const { data, error } = await supabase
+      .from("users")
+      .select("*")
+      .order("created_at", { ascending: false })
+
+    if (error) {
+      throw error
+    }
+
+    setUsers(data)
+    setLoading(false)
+  }
+
   useEffect(() => {
     getData().then((data) => {
       setUsers(data)
@@ -46,7 +63,7 @@ export const UsersProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [])
 
   return (
-    <UsersContext.Provider value={{ users, loading, setUsers }}>
+    <UsersContext.Provider value={{ users, loading, setUsers, refetchData }}>
       {children}
     </UsersContext.Provider>
   );

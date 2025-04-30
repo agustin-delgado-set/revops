@@ -9,6 +9,7 @@ import moment from "moment-timezone"
 import currencyCodes from "currency-codes"
 import { countries } from "country-data"
 import ISO6391 from "iso-639-1"
+import * as RPNInput from "react-phone-number-input";
 
 import * as z from "zod"
 
@@ -53,30 +54,43 @@ import {
 import { CalendarIcon, Check, ChevronsUpDown, RotateCw } from "lucide-react"
 import { Calendar } from "@/components/ui/calendar"
 import { format } from "date-fns"
+import flags from "react-phone-number-input/flags"
 
 /* ────────────────────────────────────────────────────────────────────────── */
-/* Static data                                                               */
+/* Static data                                                                */
 /* ────────────────────────────────────────────────────────────────────────── */
 
 const timeZoneListRaw = moment.tz.names()
 
-function getFlagEmoji(alpha2: string): string {
-  return alpha2
-    .toUpperCase()
-    .replace(/./g, char =>
-      String.fromCodePoint(127397 + char.charCodeAt(0))
-    )
+const FlagComponent = ({ country, countryName }: RPNInput.FlagProps) => {
+  const Flag = flags[country];
+
+  return (
+    <span className="flex h-4 w-6 overflow-hidden rounded-none bg-foreground/20 [&_svg]:size-full">
+      {Flag && <Flag title={countryName} />}
+    </span>
+  );
+};
+
+function ownerAlpha2(code: string): string | undefined {
+  const iso2 = code.slice(0, 2);             // USD → US, ZAR → ZA
+  if (countries.all.some(c => c.alpha2 === iso2)) return iso2;
+
+  const overrides: Record<string, string> = {
+    XOF: "CI",
+    XAF: "CM",
+  };
+  if (overrides[code]) return overrides[code];
+
+  return countries.all.find(c => c.currencies?.includes(code))?.alpha2;
 }
 
-const currencyList = currencyCodes.codes().map(code => {
-  const country = countries.all.find(
-    c => Array.isArray(c.currencies) && c.currencies.includes(code)
-  )
-  return {
-    code,
-    flag: country ? getFlagEmoji(country.alpha2) : ""
-  }
-})
+
+const currencyList = currencyCodes.codes().map(code => ({
+  code,
+  flag: ownerAlpha2(code) ? ownerAlpha2(code) : ""
+}));
+
 
 const languagesList = ISO6391.getAllNames().map(name => ({
   label: name,
@@ -219,37 +233,56 @@ export default function OnboardingForm() {
 
   /* ────── Submit ────── */
   async function onSubmit(values: FormValues) {
-    const supabase = createClient()
-    setLoading(true)
+    const supabase = createClient();
+    setLoading(true);
+
+    const first = values.first_name.toLowerCase().trim();
+    const last = values.last_name.toLowerCase().trim();
+    const domain = "revopsautomated.com";
+
+    let attempt = 0;
+
     try {
-      const formattedEmail = `${values.first_name
-        .toLowerCase()
-        .trim()}${values.last_name.toLowerCase().trim()}@revopsautomated.com`
-
-      const { error } = await supabase.from("users").insert([
-        {
-          ...values,
-          email: formattedEmail,
-          personal_email: values.email,
-          access: []
+      while (true) {
+        let formattedEmail: string;
+        if (attempt === 0) {
+          formattedEmail = `${first}@${domain}`;
+        } else if (attempt === 1) {
+          formattedEmail = `${first}${last}@${domain}`;
+        } else {
+          formattedEmail = `${first}${last}${attempt - 1}@${domain}`;
         }
-      ])
 
-      if (error) {
-        console.error("Submission error", error)
-        toast.error("Failed to submit the form. Please try again.")
-        return
+        const { error } = await supabase.from("users").insert([
+          {
+            ...values,
+            email: formattedEmail,
+            personal_email: values.email,
+            access: [],
+          },
+        ]);
+
+        if (!error) break;
+
+        if (error.code !== "23505") {
+          toast.error("Failed to submit the form. Please try again.");
+          return;
+        }
+
+        attempt += 1;
       }
 
-      document.cookie = "onboarding=1; max-age=31536000; path=/"
-      router.push("/welcome")
+      document.cookie = "onboarding=1; max-age=31536000; path=/";
+      router.push("/welcome");
     } catch (err) {
-      console.error("Submission error", err)
-      toast.error("Failed to submit the form. Please try again.")
+      console.error("Submission error", err);
+      toast.error("Failed to submit the form. Please try again.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
+
+
 
   /* ──────────────────────────────────────────────────────────────────────── */
   /* Render                                                                   */
@@ -527,12 +560,11 @@ export default function OnboardingForm() {
                               !field.value && "text-muted-foreground"
                             )}
                           >
-                            {field.value
-                              ? `${currencyList.find(
-                                c => c.code === field.value
-                              )?.flag
-                              } ${field.value}`
-                              : "Select Currency"}
+                            <span
+                              className="font-emoji"
+                            >
+                              {field.value ? field.value : "Select Currency"}
+                            </span>
                             <ChevronsUpDown className="opacity-50" />
                           </Button>
                         </FormControl>
@@ -555,7 +587,10 @@ export default function OnboardingForm() {
                                     form.setValue("local_currency", code)
                                   }
                                 >
-                                  <span className="mr-2">{flag}</span>
+                                  <FlagComponent
+                                    country={flag as any}
+                                    countryName={code}
+                                  />
                                   {code}
                                   <Check
                                     className={cn(

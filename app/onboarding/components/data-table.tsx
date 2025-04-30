@@ -27,7 +27,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, Filter, Loader2, PartyPopper } from "lucide-react"
+import { ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, Filter, Loader2, PartyPopper, Trash2 } from "lucide-react"
 import { useId, useMemo, useState } from "react"
 import { useUsers } from "../context"
 import { Users } from "./columns"
@@ -47,11 +47,12 @@ export function DataTable({
   const supabase = createClient();
 
   const { data: session } = useSession();
-  const { users } = useUsers()
+  const { users, refetchData } = useUsers()
 
   const id = useId();
 
   const [loading, setLoading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [pagination, setPagination] = useState<PaginationState>({
@@ -101,6 +102,31 @@ export function DataTable({
 
     table.getColumn("status")?.setFilterValue(newFilterValue.length ? newFilterValue : undefined);
   };
+
+  const handleDeleteSelectedUsers = async () => {
+    setDeleting(true);
+    const supabase = createClient();
+
+    const selectedRows = table.getSelectedRowModel().rows.map((row) => row.original);
+    const selectedIds = selectedRows.map((row) => row.id);
+
+    try {
+      const { error } = await supabase.from("users").delete().in("id", selectedIds);
+      if (error) {
+        toast.error("Error deleting users");
+      } else {
+        toast.success("Users deleted successfully");
+        await refetchData();
+        table.resetRowSelection();
+      }
+    } catch (error) {
+      console.error("Error deleting users:", error);
+      toast.error("Error deleting users");
+    } finally {
+      setDeleting(false);
+    }
+
+  }
 
   const selectedStatuses = useMemo(() => {
     const filterValue = table.getColumn("status")?.getFilterValue() as string[];
@@ -209,30 +235,48 @@ export function DataTable({
         </div>
         <div className="flex items-center gap-3">
           {table.getSelectedRowModel().rows.length > 0 ? (
-            <Button
-              className="ml-auto"
-              variant="outline"
-              disabled={loading}
-              onClick={() => {
-                const selectedRows = table.getSelectedRowModel().rows.map((row) => row.original);
-                sendOnboardingEmail(selectedRows)
-              }}
-            >
-              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                :
-                <PartyPopper
-                  className="-ms-1 me-2 opacity-60"
-                  size={16}
-                  strokeWidth={2}
-                  aria-hidden="true"
-                />
-              }
-              Onboard selected
-              <span className="-me-1 ms-3 inline-flex h-5 max-h-full items-center rounded border border-border bg-background px-1 font-[inherit] text-[0.625rem] font-medium text-muted-foreground/70">
-                {table.getSelectedRowModel().rows.length}
-              </span>
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                size="icon"
+                variant="destructive"
+                onClick={handleDeleteSelectedUsers}
+                disabled={loading || deleting}
+              >
+                {deleting ? <Loader2 className="animate-spin" />
+                  :
+                  <Trash2
+                    size={16}
+                    strokeWidth={2}
+                    aria-hidden="true"
+                  />
+                }
+              </Button>
+              <Button
+                className="ml-auto"
+                variant="outline"
+                disabled={loading}
+                onClick={() => {
+                  const selectedRows = table.getSelectedRowModel().rows.map((row) => row.original);
+                  sendOnboardingEmail(selectedRows)
+                }}
+              >
+                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  :
+                  <PartyPopper
+                    className="-ms-1 me-2 opacity-60"
+                    size={16}
+                    strokeWidth={2}
+                    aria-hidden="true"
+                  />
+                }
+                Onboard selected
+                <span className="-me-1 ms-3 inline-flex h-5 max-h-full items-center rounded border border-border bg-background px-1 font-[inherit] text-[0.625rem] font-medium text-muted-foreground/70">
+                  {table.getSelectedRowModel().rows.length}
+                </span>
+              </Button>
+            </div>
           ) : (
+
             <Button
               className="ml-auto"
               variant="outline"

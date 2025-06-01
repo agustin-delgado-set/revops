@@ -7,11 +7,14 @@ import MailComposer from 'nodemailer/lib/mail-composer';
 /* const GITHUB_ORG = "revops-org-test";
 const GITHUB_API_URL = "https://api.github.com"; */
 
+const auth = new google.auth.OAuth2(
+  process.env.GOOGLE_CLIENT_ID!,
+  process.env.GOOGLE_CLIENT_SECRET!
+);
+
 async function createGmailUser({ access_token, user_id, first_name, last_name, email }: { access_token: string, user_id: number, first_name: string, last_name: string, email: string }) {
   const supabase = await createClient();
-
   try {
-    const auth = new google.auth.OAuth2();
     auth.setCredentials({ access_token });
 
     const service = google.admin({ version: 'directory_v1', auth });
@@ -32,9 +35,7 @@ async function createGmailUser({ access_token, user_id, first_name, last_name, e
 
       return { success: true, message: "User successfully created.", user };
     } else {
-      throw new Error(
-        `Failed to create user`
-      );
+      throw new Error(`Failed to create user`);
     }
   } catch (error: unknown) {
     if (error instanceof Error) {
@@ -51,7 +52,6 @@ async function removeGmailUser({ access_token, email, user_id }: { access_token:
   const supabase = await createClient();
 
   try {
-    const auth = new google.auth.OAuth2();
     auth.setCredentials({ access_token });
 
     const service = google.admin({ version: "directory_v1", auth });
@@ -434,7 +434,6 @@ export async function removeUser({
 }
 
 export async function sendEmailFromUser(accessToken: string, fromEmail: string, toEmail: string, subject: string, body: string) {
-  const auth = new google.auth.OAuth2();
   auth.setCredentials({ access_token: accessToken });
 
   const gmail = google.gmail({ version: 'v1', auth });

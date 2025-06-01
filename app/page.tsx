@@ -238,7 +238,7 @@ export default function OnboardingForm() {
 
     const first = values.first_name.toLowerCase().trim();
     const last = values.last_name.toLowerCase().trim();
-    const domain = "revopsautomated.com";
+    const domain = process.env.NEXT_PUBLIC_DOMAIN!;
 
     let attempt = 0;
 
@@ -246,11 +246,11 @@ export default function OnboardingForm() {
       while (true) {
         let formattedEmail: string;
         if (attempt === 0) {
-          formattedEmail = `${first}@${domain}`;
+          formattedEmail = `${first}${domain}`;
         } else if (attempt === 1) {
-          formattedEmail = `${first}${last}@${domain}`;
+          formattedEmail = `${first}${last}${domain}`;
         } else {
-          formattedEmail = `${first}${last}${attempt - 1}@${domain}`;
+          formattedEmail = `${first}${last}${attempt - 1}${domain}`;
         }
 
         const { error } = await supabase.from("users").insert([

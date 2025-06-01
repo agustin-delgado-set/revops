@@ -89,7 +89,7 @@ const authOptions: NextAuthOptions = {
   callbacks: {
     async signIn({ user }) {
       const email = user.email || "";
-      if (email.endsWith("@revopsautomated.com")) {
+      if (email.endsWith(process.env.DOMAIN!)) {
         return true;
       }
       return false;
